@@ -50,6 +50,21 @@ volumes:
   budget-data:
 ```
 
+## Windows Desktop App
+
+Download the latest installer from the [Releases](https://github.com/mitchcode-cold/budget-tracker/releases) page.
+
+Or build it yourself:
+
+```bash
+git clone https://github.com/mitchcode-cold/budget-tracker.git
+cd budget-tracker
+npm install
+npm run electron:build:win
+```
+
+The installer will be in the `release` folder.
+
 ## Manual Installation
 
 ### Prerequisites
@@ -110,6 +125,7 @@ npm run lint
 - **Database:** SQLite (with better-sqlite3)
 - **Build:** Vite, tsup
 - **Container:** Docker
+- **Desktop:** Electron
 
 ## Contributing
 

@@ -4,6 +4,11 @@ node_modules/
 # Build outputs (will be built in container)
 dist/
 server-dist/
+release/
+
+# Electron (not needed for Docker)
+electron/
+build/
 
 # Development files
 .git/
