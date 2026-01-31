@@ -23,7 +23,6 @@ RUN npm ci --omit=dev
 # Copy built assets
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server-dist ./server-dist
-COPY --from=builder /app/server/db/schema.sql ./server/db/schema.sql
 
 # Create data directory
 RUN mkdir -p /app/data
