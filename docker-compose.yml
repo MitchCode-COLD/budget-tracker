@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  budget-tracker:
+    build: .
+    ports:
+      - "5555:5555"
+    volumes:
+      - budget-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=5555
+    restart: unless-stopped
+
+volumes:
+  budget-data:

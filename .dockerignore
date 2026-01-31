@@ -1,0 +1,42 @@
+# Dependencies (will be installed fresh in container)
+node_modules/
+
+# Build outputs (will be built in container)
+dist/
+server-dist/
+
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+
+# Documentation (not needed in container)
+*.md
+LICENSE
+
+# Database (container uses its own volume)
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Environment files
+.env*
+
+# Logs
+*.log
+
+# Test files
+coverage/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# TypeScript build info
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
