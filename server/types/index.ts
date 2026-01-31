@@ -121,3 +121,66 @@ export interface BackupData {
     totalBills: number;
   };
 }
+
+// Export/Import types
+export type ExportFormat = 'json' | 'csv';
+export type ExportScope = 'all' | 'transactions' | 'accounts' | 'categories';
+export type ImportMode = 'replace' | 'merge';
+
+export interface ExportOptions {
+  format: ExportFormat;
+  scope: ExportScope;
+  dateRange?: {
+    startDate: number;
+    endDate: number;
+  };
+  encrypted?: boolean;
+  password?: string;
+  dateFormat?: string;
+}
+
+export interface ImportOptions {
+  mode: ImportMode;
+  password?: string;
+}
+
+export interface ImportResult {
+  success: boolean;
+  mode: ImportMode;
+  summary: {
+    accountsAdded: number;
+    accountsSkipped: number;
+    categoriesAdded: number;
+    categoriesSkipped: number;
+    transactionsAdded: number;
+    transactionsSkipped: number;
+    billsAdded: number;
+    billsSkipped: number;
+    goalsAdded: number;
+    goalsSkipped: number;
+    budgetsAdded: number;
+    budgetsSkipped: number;
+    patternsAdded: number;
+    patternsSkipped: number;
+    contributionsAdded: number;
+    contributionsSkipped: number;
+  };
+  errors: ImportError[];
+}
+
+export interface ImportError {
+  entity: string;
+  id: string;
+  field?: string;
+  message: string;
+}
+
+export interface EncryptedBackupData {
+  version: number;
+  encrypted: true;
+  algorithm: 'aes-256-gcm';
+  salt: string;
+  iv: string;
+  authTag: string;
+  data: string;
+}

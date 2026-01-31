@@ -9,58 +9,58 @@ import {
   DateFormat,
   FirstDayOfWeek,
 } from '@/stores/settingsStore';
-import { backupService } from '@/infrastructure/api/backupService';
+import { ImportResult } from '@/infrastructure/api/backupService';
+import ExportOptionsModal from './ExportOptionsModal';
+import ImportOptionsModal from './ImportOptionsModal';
+import ImportResultsModal from './ImportResultsModal';
 
 export default function Settings() {
   const { theme, setTheme } = useThemeStore();
   const { currency, dateFormat, firstDayOfWeek, setCurrency, setDateFormat, setFirstDayOfWeek } =
     useSettingsStore();
-  const [isExporting, setIsExporting] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Modal states
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    setImportStatus(null);
-    try {
-      await backupService.downloadExport();
-    } catch (err) {
-      console.error('Export failed:', err);
-      setImportStatus({ type: 'error', message: 'Export failed. Please try again.' });
-    } finally {
-      setIsExporting(false);
-    }
+  const handleExportClick = () => {
+    setShowExportModal(true);
   };
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsImporting(true);
-    setImportStatus(null);
-
-    try {
-      const result = await backupService.importFromFile(file);
-      if (result.success) {
-        setImportStatus({ type: 'success', message: 'Data restored successfully! Refresh the page to see your data.' });
-      } else {
-        setImportStatus({ type: 'error', message: result.error || 'Import failed' });
-      }
-    } catch (err) {
-      console.error('Import failed:', err);
-      setImportStatus({ type: 'error', message: 'Import failed. Please check the file format.' });
-    } finally {
-      setIsImporting(false);
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    if (file) {
+      setSelectedFile(file);
+      setShowImportModal(true);
     }
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImportComplete = (result: ImportResult) => {
+    setImportResult(result);
+    setShowResultsModal(true);
+  };
+
+  const handleImportModalClose = () => {
+    setShowImportModal(false);
+    setSelectedFile(null);
+  };
+
+  const handleResultsModalClose = () => {
+    setShowResultsModal(false);
+    setImportResult(null);
   };
 
   return (
@@ -142,24 +142,22 @@ export default function Settings() {
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Data Management</h3>
         <div className="space-y-3">
           <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            onClick={handleExportClick}
+            className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
-            <span className="font-medium text-slate-700 dark:text-slate-200">
-              {isExporting ? 'Exporting...' : 'Export Data'}
-            </span>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Download a complete backup of your data</p>
+            <span className="font-medium text-slate-700 dark:text-slate-200">Export Data</span>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Download backup as JSON or CSV, with optional encryption
+            </p>
           </button>
           <button
             onClick={handleImportClick}
-            disabled={isImporting}
-            className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
-            <span className="font-medium text-slate-700 dark:text-slate-200">
-              {isImporting ? 'Importing...' : 'Import Data'}
-            </span>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Restore from a backup file</p>
+            <span className="font-medium text-slate-700 dark:text-slate-200">Import Data</span>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Restore from backup file, with merge or replace options
+            </p>
           </button>
           <input
             type="file"
@@ -169,19 +167,27 @@ export default function Settings() {
             aria-label="Import backup file"
             className="hidden"
           />
-          {importStatus && (
-            <div
-              className={`p-3 rounded-lg text-sm ${
-                importStatus.type === 'success'
-                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                  : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-              }`}
-            >
-              {importStatus.message}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Modals */}
+      <ExportOptionsModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
+
+      <ImportOptionsModal
+        isOpen={showImportModal}
+        onClose={handleImportModalClose}
+        file={selectedFile}
+        onImportComplete={handleImportComplete}
+      />
+
+      <ImportResultsModal
+        isOpen={showResultsModal}
+        onClose={handleResultsModalClose}
+        result={importResult}
+      />
     </div>
   );
 }

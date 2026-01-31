@@ -123,12 +123,28 @@ export const categoryRepo = {
     return api.get('/api/categories');
   },
 
+  async getById(id: string): Promise<Category | null> {
+    try {
+      return await api.get(`/api/categories/${id}`);
+    } catch {
+      return null;
+    }
+  },
+
   async getByType(type: 'income' | 'expense'): Promise<Category[]> {
     return api.get(`/api/categories?type=${type}`);
   },
 
   async create(data: { name: string; type: 'income' | 'expense'; icon?: string; color?: string }): Promise<Category> {
     return api.post('/api/categories', data);
+  },
+
+  async update(id: string, data: { name?: string; icon?: string; color?: string }): Promise<Category> {
+    return api.patch(`/api/categories/${id}`, data);
+  },
+
+  async delete(id: string): Promise<{ success: boolean; error?: string }> {
+    return api.delete(`/api/categories/${id}`);
   },
 };
 

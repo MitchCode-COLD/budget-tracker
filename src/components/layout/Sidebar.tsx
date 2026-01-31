@@ -54,7 +54,7 @@ export default function Sidebar() {
           {theme === 'light' ? '🌙' : '☀️'}
           {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
         </button>
-        <p className="text-xs text-slate-400 dark:text-slate-500 text-center">v0.1.0</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 text-center">v0.1.2</p>
       </div>
     </aside>
   );
