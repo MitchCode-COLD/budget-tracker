@@ -27,7 +27,7 @@ export default function DocumentScanner() {
   const [dueDate, setDueDate] = useState('');
   const [accountId, setAccountId] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [frequency, setFrequency] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
+  const [frequency, setFrequency] = useState<'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly');
 
   // Load accounts and categories
   useEffect(() => {
@@ -462,9 +462,11 @@ export default function DocumentScanner() {
               <select
                 id="scanner-frequency"
                 value={frequency}
-                onChange={(e) => setFrequency(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
+                onChange={(e) => setFrequency(e.target.value as 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly')}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
+                <option value="weekly">Weekly</option>
+                <option value="bi-weekly">Bi-Weekly</option>
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
                 <option value="yearly">Yearly</option>

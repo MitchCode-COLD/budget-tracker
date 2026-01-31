@@ -41,7 +41,7 @@ export interface Bill {
   account_id: string | null;
   amount: number;
   due_day: number;
-  frequency: 'monthly' | 'quarterly' | 'yearly';
+  frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
   type: 'income' | 'expense';
   next_due_date: number;
   reminder_days: number;

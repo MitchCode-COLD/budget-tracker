@@ -18,7 +18,7 @@ export const billRepo = {
     name: string;
     amount: number;
     due_day: number;
-    frequency: 'monthly' | 'quarterly' | 'yearly';
+    frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
     type?: 'income' | 'expense';
     category_id?: string;
     account_id?: string;
@@ -65,6 +65,12 @@ export const billRepo = {
     const currentDue = new Date(bill.next_due_date);
     let nextDue: Date;
     switch (bill.frequency) {
+      case 'weekly':
+        nextDue = new Date(currentDue.getTime() + 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'bi-weekly':
+        nextDue = new Date(currentDue.getTime() + 14 * 24 * 60 * 60 * 1000);
+        break;
       case 'monthly':
         nextDue = new Date(currentDue.getFullYear(), currentDue.getMonth() + 1, bill.due_day);
         break;

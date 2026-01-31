@@ -90,15 +90,24 @@ export default function BillList() {
     return bill.type === filter;
   });
 
-  // Summary totals
+  // Summary totals - calculate monthly equivalent
+  const getMonthlyMultiplier = (frequency: string) => {
+    switch (frequency) {
+      case 'weekly': return 52 / 12; // ~4.33 times per month
+      case 'bi-weekly': return 26 / 12; // ~2.17 times per month
+      case 'monthly': return 1;
+      case 'quarterly': return 1 / 3;
+      case 'yearly': return 1 / 12;
+      default: return 1;
+    }
+  };
+
   const monthlyIncome = bills.filter(b => b.type === 'income').reduce((sum, b) => {
-    const multiplier = b.frequency === 'monthly' ? 1 : b.frequency === 'quarterly' ? 1/3 : 1/12;
-    return sum + (b.amount * multiplier);
+    return sum + (b.amount * getMonthlyMultiplier(b.frequency));
   }, 0);
 
   const monthlyExpenses = bills.filter(b => b.type === 'expense').reduce((sum, b) => {
-    const multiplier = b.frequency === 'monthly' ? 1 : b.frequency === 'quarterly' ? 1/3 : 1/12;
-    return sum + (b.amount * multiplier);
+    return sum + (b.amount * getMonthlyMultiplier(b.frequency));
   }, 0);
 
   return (

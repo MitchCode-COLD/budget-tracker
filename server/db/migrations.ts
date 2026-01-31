@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS bills (
     account_id TEXT REFERENCES accounts(id) ON DELETE SET NULL,
     amount REAL NOT NULL,
     due_day INTEGER NOT NULL CHECK (due_day >= 1 AND due_day <= 31),
-    frequency TEXT NOT NULL CHECK (frequency IN ('monthly', 'quarterly', 'yearly')),
+    frequency TEXT NOT NULL CHECK (frequency IN ('weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly')),
     type TEXT NOT NULL DEFAULT 'expense' CHECK (type IN ('income', 'expense')),
     next_due_date INTEGER NOT NULL,
     reminder_days INTEGER NOT NULL DEFAULT 3,
@@ -177,5 +177,47 @@ export function runMigrations() {
     console.log('Schema applied successfully');
   } else {
     console.log('Schema already applied');
+  }
+
+  // Migration 002: Add weekly/bi-weekly frequency support
+  const migration002 = db.prepare('SELECT name FROM _migrations WHERE name = ?').get('002_frequency_update');
+  if (!migration002) {
+    console.log('Applying frequency update migration...');
+    const timestamp = Date.now();
+
+    // SQLite requires table recreation to modify CHECK constraints
+    db.exec(`
+      -- Create new bills table with updated frequency constraint
+      CREATE TABLE IF NOT EXISTS bills_new (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
+        account_id TEXT REFERENCES accounts(id) ON DELETE SET NULL,
+        amount REAL NOT NULL,
+        due_day INTEGER NOT NULL CHECK (due_day >= 1 AND due_day <= 31),
+        frequency TEXT NOT NULL CHECK (frequency IN ('weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly')),
+        type TEXT NOT NULL DEFAULT 'expense' CHECK (type IN ('income', 'expense')),
+        next_due_date INTEGER NOT NULL,
+        reminder_days INTEGER NOT NULL DEFAULT 3,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        is_paid INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      -- Copy data from old table (if it exists and has data)
+      INSERT OR IGNORE INTO bills_new SELECT * FROM bills;
+
+      -- Drop old table and rename new one
+      DROP TABLE IF EXISTS bills;
+      ALTER TABLE bills_new RENAME TO bills;
+
+      -- Recreate index
+      CREATE INDEX IF NOT EXISTS idx_bills_next_due_date ON bills(next_due_date);
+      CREATE INDEX IF NOT EXISTS idx_bills_type ON bills(type);
+    `);
+
+    db.prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)').run('002_frequency_update', timestamp);
+    console.log('Frequency update migration applied');
   }
 }

@@ -19,7 +19,7 @@ const billSchema = z.object({
     },
     'Day must be between 1 and 31'
   ),
-  frequency: z.enum(['monthly', 'quarterly', 'yearly']),
+  frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly']),
   category_id: z.string().optional(),
   account_id: z.string().optional(),
   reminder_days: z.string().optional(),
@@ -112,6 +112,8 @@ export default function BillForm({ onSuccess, onCancel }: BillFormProps) {
   ];
 
   const frequencyOptions = [
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'bi-weekly', label: 'Bi-Weekly' },
     { value: 'monthly', label: 'Monthly' },
     { value: 'quarterly', label: 'Quarterly' },
     { value: 'yearly', label: 'Yearly' },
