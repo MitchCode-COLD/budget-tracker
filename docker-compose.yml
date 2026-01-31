@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   budget-tracker:
+    container_name: budget-tracker
     build: .
     ports:
       - "5555:5555"
