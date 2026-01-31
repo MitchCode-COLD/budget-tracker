@@ -61,7 +61,7 @@ volumes:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/budget-tracker.git
+git clone https://github.com/mitchcode-cold/budget-tracker.git
 cd budget-tracker
 
 # Install dependencies
@@ -117,7 +117,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-If you find this project useful, consider [sponsoring on GitHub](https://github.com/sponsors/yourusername) to support ongoing development.
+If you find this project useful, consider [sponsoring on GitHub](https://github.com/sponsors/mitchcode-cold) to support ongoing development.
 
 ## License
 
