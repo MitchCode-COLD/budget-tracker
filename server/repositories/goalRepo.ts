@@ -4,7 +4,7 @@ import type { Goal, GoalContribution } from '../types';
 export const goalRepo = {
   getAll(): Goal[] {
     return db.prepare(
-      'SELECT * FROM goals WHERE status != "abandoned" ORDER BY priority DESC, deadline ASC'
+      "SELECT * FROM goals WHERE status != 'abandoned' ORDER BY priority DESC, deadline ASC"
     ).all() as Goal[];
   },
 
@@ -14,7 +14,7 @@ export const goalRepo = {
 
   getActive(): Goal[] {
     return db.prepare(
-      'SELECT * FROM goals WHERE status = "active" ORDER BY priority DESC, deadline ASC'
+      "SELECT * FROM goals WHERE status = 'active' ORDER BY priority DESC, deadline ASC"
     ).all() as Goal[];
   },
 
@@ -110,6 +110,6 @@ export const goalRepo = {
   },
 
   delete(id: string): void {
-    db.prepare('UPDATE goals SET status = "abandoned", updated_at = ? WHERE id = ?').run(now(), id);
+    db.prepare("UPDATE goals SET status = 'abandoned', updated_at = ? WHERE id = ?").run(now(), id);
   },
 };
