@@ -90,6 +90,17 @@ export interface Budget {
   updated_at: number;
 }
 
+export type BillCreateData = {
+  name: string;
+  amount: number;
+  date: number;
+  frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+  type?: 'income' | 'expense';
+  category_id?: string;
+  account_id?: string;
+  reminder_days?: number;
+};
+
 // Account Repository
 export const accountRepo = {
   async getAll(): Promise<Account[]> {
@@ -189,16 +200,7 @@ export const billRepo = {
     return api.get(`/api/bills/upcoming?days=${days}`);
   },
 
-  async create(data: {
-    name: string;
-    amount: number;
-    date: number;
-    frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
-    type?: 'income' | 'expense';
-    category_id?: string;
-    account_id?: string;
-    reminder_days?: number;
-  }): Promise<Bill> {
+  async create(data: BillCreateData): Promise<Bill> {
     return api.post('/api/bills', data);
   },
 
