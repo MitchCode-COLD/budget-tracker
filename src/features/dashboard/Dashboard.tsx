@@ -204,8 +204,8 @@ export default function Dashboard() {
 
         {/* Monthly Trends - Bar Chart */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Monthly Trends</h3>
-          {monthlyTrends.some((t) => t.income > 0 || t.expenses > 0) ? (
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Income vs Expenses</h3>
+          {monthlyTrends.some((t) => t.income > 0 || t.expenses > 0 || t.projectedExpenses > 0) ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyTrends}>
@@ -214,6 +214,7 @@ export default function Dashboard() {
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
                   <Legend />
                   <Bar dataKey="income" name="Income" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="projectedExpenses" name="Expected" fill="#ef4444" fillOpacity={0.25} radius={[4, 4, 0, 0]} />
                   <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

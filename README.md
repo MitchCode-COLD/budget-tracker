@@ -50,6 +50,18 @@ volumes:
   budget-data:
 ```
 
+### Building the Docker Image
+
+You can build the Docker image yourself:
+
+```bash
+# Build using Docker Compose
+docker-compose build
+
+# Or build with a standard docker build command
+docker build -t budget-tracker .
+```
+
 ## Windows Desktop App
 
 Download the latest installer from the [Releases](https://github.com/mitchcode-cold/budget-tracker/releases) page.

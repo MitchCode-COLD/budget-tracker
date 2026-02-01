@@ -173,13 +173,12 @@ export default function DocumentScanner() {
     setProgress('Saving recurring item...');
 
     try {
-      const dueDateObj = dueDate ? new Date(dueDate) : new Date();
-      const dueDay = dueDateObj.getDate();
+      const dateValue = dueDate ? new Date(dueDate).getTime() : Date.now();
 
       await billRepo.create({
         name: vendor,
         amount: parseFloat(amount),
-        due_day: dueDay,
+        date: dateValue,
         frequency,
         type: transactionType,
         category_id: categoryId || undefined,

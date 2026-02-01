@@ -26,6 +26,7 @@ export interface MonthlyTrend {
   income: number;
   expenses: number;
   net: number;
+  projectedExpenses: number;
 }
 
 export interface BudgetProgress {
@@ -126,6 +127,25 @@ export const dashboardService = {
     const trends: MonthlyTrend[] = [];
     const now = new Date();
 
+    // Get all active expense bills for projection calculation
+    const bills = db.prepare(
+      `SELECT amount, frequency FROM bills WHERE is_active = 1 AND type = 'expense'`
+    ).all() as { amount: number; frequency: string }[];
+
+    // Calculate monthly projected expenses from bills
+    const getMonthlyBillAmount = (bill: { amount: number; frequency: string }) => {
+      switch (bill.frequency) {
+        case 'weekly': return bill.amount * (52 / 12);
+        case 'bi-weekly': return bill.amount * (26 / 12);
+        case 'monthly': return bill.amount;
+        case 'quarterly': return bill.amount / 3;
+        case 'yearly': return bill.amount / 12;
+        default: return bill.amount;
+      }
+    };
+
+    const monthlyProjectedExpenses = bills.reduce((sum, bill) => sum + getMonthlyBillAmount(bill), 0);
+
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const startDate = date.getTime();
@@ -144,6 +164,10 @@ export const dashboardService = {
       const income = incomeResult?.total || 0;
       const expenses = expenseResult?.total || 0;
 
+      // Only show projected for current and future months
+      const isCurrentOrFuture = i <= 0;
+      const projectedExpenses = isCurrentOrFuture ? monthlyProjectedExpenses : 0;
+
       trends.push({
         month: date.toLocaleString('default', { month: 'short' }),
         year: date.getFullYear(),
@@ -151,6 +175,7 @@ export const dashboardService = {
         income,
         expenses,
         net: income - expenses,
+        projectedExpenses,
       });
     }
 

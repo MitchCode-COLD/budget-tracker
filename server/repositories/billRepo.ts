@@ -17,7 +17,7 @@ export const billRepo = {
   create(data: {
     name: string;
     amount: number;
-    due_day: number;
+    date: number; // The date of the *first* occurrence
     frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
     type?: 'income' | 'expense';
     category_id?: string;
@@ -26,31 +26,62 @@ export const billRepo = {
   }): Bill {
     const id = generateId();
     const timestamp = now();
+    const startDate = new Date(data.date);
+    const due_day = startDate.getDate();
 
-    // Calculate next due date
-    const today = new Date();
-    let nextDue = new Date(today.getFullYear(), today.getMonth(), data.due_day);
-    if (nextDue <= today) {
-      nextDue = new Date(today.getFullYear(), today.getMonth() + 1, data.due_day);
+    // Calculate next due date based on the provided start date and frequency
+    let nextDue: Date;
+    switch (data.frequency) {
+      case 'weekly':
+        nextDue = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'bi-weekly':
+        nextDue = new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+        break;
+      case 'monthly':
+        nextDue = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate());
+        break;
+      case 'quarterly':
+        nextDue = new Date(startDate.getFullYear(), startDate.getMonth() + 3, startDate.getDate());
+        break;
+      case 'yearly':
+        nextDue = new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate());
+        break;
     }
 
-    db.prepare(
-      `INSERT INTO bills (id, name, category_id, account_id, amount, due_day, frequency, type, next_due_date, reminder_days, is_active, is_paid, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`
-    ).run(
-      id,
-      data.name,
-      data.category_id || null,
-      data.account_id || null,
-      data.amount,
-      data.due_day,
-      data.frequency,
-      data.type || 'expense',
-      nextDue.getTime(),
-      data.reminder_days || 3,
-      timestamp,
-      timestamp
-    );
+    const createBillAndFirstTransaction = db.transaction(() => {
+      db.prepare(
+        `INSERT INTO bills (id, name, category_id, account_id, amount, due_day, frequency, type, next_due_date, reminder_days, is_active, is_paid, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`
+      ).run(
+        id,
+        data.name,
+        data.category_id || null,
+        data.account_id || null,
+        data.amount,
+        due_day, // Still store the original day for consistency
+        data.frequency,
+        data.type || 'expense',
+        nextDue.getTime(),
+        data.reminder_days || 3,
+        timestamp,
+        timestamp
+      );
+
+      // Create the first transaction for this recurring item
+      if (data.account_id) {
+        transactionRepo.create({
+          account_id: data.account_id,
+          category_id: data.category_id || undefined,
+          amount: data.amount,
+          type: data.type || 'expense',
+          date: data.date,
+          description: `${data.name} (${data.type === 'income' ? 'Initial Income' : 'Initial Bill'})`,
+        });
+      }
+    });
+
+    createBillAndFirstTransaction();
 
     return db.prepare('SELECT * FROM bills WHERE id = ?').get(id) as Bill;
   },

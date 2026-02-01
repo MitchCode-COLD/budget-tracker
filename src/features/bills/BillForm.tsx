@@ -12,13 +12,7 @@ const billSchema = z.object({
     (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
     'Amount must be a positive number'
   ),
-  due_day: z.string().min(1, 'Day is required').refine(
-    (val) => {
-      const day = parseInt(val);
-      return !isNaN(day) && day >= 1 && day <= 31;
-    },
-    'Day must be between 1 and 31'
-  ),
+  date: z.string().min(1, 'Date is required'),
   frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly']),
   category_id: z.string().optional(),
   account_id: z.string().optional(),
@@ -49,7 +43,7 @@ export default function BillForm({ onSuccess, onCancel }: BillFormProps) {
     defaultValues: {
       name: '',
       amount: '',
-      due_day: '',
+      date: new Date().toISOString().split('T')[0], // Default to today
       frequency: 'monthly',
       reminder_days: '3',
     },
@@ -85,7 +79,7 @@ export default function BillForm({ onSuccess, onCancel }: BillFormProps) {
       await billRepo.create({
         name: data.name,
         amount: parseFloat(data.amount),
-        due_day: parseInt(data.due_day),
+        date: new Date(data.date).getTime(),
         frequency: data.frequency,
         type: itemType,
         category_id: data.category_id || undefined,
@@ -168,13 +162,10 @@ export default function BillForm({ onSuccess, onCancel }: BillFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <Input
-          label={isIncome ? 'Pay Day (1-31)' : 'Due Day (1-31)'}
-          type="number"
-          min="1"
-          max="31"
-          placeholder="15"
-          error={errors.due_day?.message}
-          {...register('due_day')}
+          label={isIncome ? 'First Pay Date' : 'First Due Date'}
+          type="date"
+          error={errors.date?.message}
+          {...register('date')}
         />
 
         <Select
