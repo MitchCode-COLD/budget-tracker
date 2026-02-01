@@ -27,6 +27,7 @@ export interface MonthlyTrend {
   expenses: number;
   net: number;
   projectedExpenses: number;
+  projectedIncome: number;
 }
 
 export interface BudgetProgress {
@@ -95,7 +96,8 @@ export const dashboardService = {
   getCategorySpending(months = 1): CategorySpending[] {
     const now = new Date();
     const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1).getTime();
-    const endDate = Date.now();
+    // Use end of today to ensure all transactions for the current day are included
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
 
     const results = db.prepare(
       `SELECT
@@ -127,13 +129,13 @@ export const dashboardService = {
     const trends: MonthlyTrend[] = [];
     const now = new Date();
 
-    // Get all active expense bills for projection calculation
+    // Get all active bills for projection calculation
     const bills = db.prepare(
-      `SELECT amount, frequency FROM bills WHERE is_active = 1 AND type = 'expense'`
-    ).all() as { amount: number; frequency: string }[];
+      `SELECT amount, frequency, type FROM bills WHERE is_active = 1`
+    ).all() as { amount: number; frequency: string; type: 'income' | 'expense' }[];
 
-    // Calculate monthly projected expenses from bills
-    const getMonthlyBillAmount = (bill: { amount: number; frequency: string }) => {
+    // Calculate monthly projected amounts from bills
+    const getMonthlyAmount = (bill: { amount: number; frequency: string }) => {
       switch (bill.frequency) {
         case 'weekly': return bill.amount * (52 / 12);
         case 'bi-weekly': return bill.amount * (26 / 12);
@@ -144,7 +146,13 @@ export const dashboardService = {
       }
     };
 
-    const monthlyProjectedExpenses = bills.reduce((sum, bill) => sum + getMonthlyBillAmount(bill), 0);
+    const monthlyProjectedExpenses = bills
+      .filter(b => b.type === 'expense')
+      .reduce((sum, bill) => sum + getMonthlyAmount(bill), 0);
+
+    const monthlyProjectedIncome = bills
+      .filter(b => b.type === 'income')
+      .reduce((sum, bill) => sum + getMonthlyAmount(bill), 0);
 
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -167,6 +175,7 @@ export const dashboardService = {
       // Only show projected for current and future months
       const isCurrentOrFuture = i <= 0;
       const projectedExpenses = isCurrentOrFuture ? monthlyProjectedExpenses : 0;
+      const projectedIncome = isCurrentOrFuture ? monthlyProjectedIncome : 0;
 
       trends.push({
         month: date.toLocaleString('default', { month: 'short' }),
@@ -176,6 +185,7 @@ export const dashboardService = {
         expenses,
         net: income - expenses,
         projectedExpenses,
+        projectedIncome,
       });
     }
 
@@ -250,10 +260,32 @@ export const dashboardService = {
 
     const lastMonthMap = new Map(lastMonth.map((l) => [l.category_id, l.total]));
 
+    // Minimum days before we trust the current month's data for projections
+    const MIN_DAYS_FOR_PROJECTION = 7;
+
     return currentMonth.map((c) => {
-      const dailyAvg = dayOfMonth > 0 ? c.total / dayOfMonth : 0;
-      const projected = c.total + dailyAvg * daysRemaining;
       const lastMonthTotal = lastMonthMap.get(c.category_id) || 0;
+      let dailyAvg: number;
+      let projected: number;
+
+      if (dayOfMonth >= MIN_DAYS_FOR_PROJECTION) {
+        // After 7 days, use current month's daily average
+        dailyAvg = c.total / dayOfMonth;
+        projected = c.total + dailyAvg * daysRemaining;
+      } else if (lastMonthTotal > 0) {
+        // Early in month: blend current spending with last month's pattern
+        // Weight last month more heavily early on
+        const lastMonthDailyAvg = lastMonthTotal / new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        const currentDailyAvg = dayOfMonth > 0 ? c.total / dayOfMonth : 0;
+        // Weight: early in month favors last month, later favors current
+        const currentWeight = dayOfMonth / MIN_DAYS_FOR_PROJECTION;
+        dailyAvg = currentDailyAvg * currentWeight + lastMonthDailyAvg * (1 - currentWeight);
+        projected = c.total + dailyAvg * daysRemaining;
+      } else {
+        // No last month data and early in month: just use current spent as projection
+        dailyAvg = dayOfMonth > 0 ? c.total / dayOfMonth : 0;
+        projected = c.total + dailyAvg * daysRemaining;
+      }
 
       let trend: 'up' | 'down' | 'stable' = 'stable';
       let trendPercent = 0;

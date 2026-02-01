@@ -58,18 +58,46 @@ function waitForServer(callback, retries = 30) {
 }
 
 function startServer() {
-  const serverPath = path.join(__dirname, '../server-dist/index.js');
+  const isPackaged = app.isPackaged;
+
+  let serverPath;
+  let cwd;
+
+  if (isPackaged) {
+    // In packaged app, server-dist is unpacked from asar
+    const unpackedPath = path.join(process.resourcesPath, 'app.asar.unpacked');
+    serverPath = path.join(unpackedPath, 'server-dist', 'index.js');
+    cwd = unpackedPath;
+  } else {
+    // In development
+    serverPath = path.join(__dirname, '..', 'server-dist', 'index.js');
+    cwd = path.join(__dirname, '..');
+  }
 
   // Set data directory to user's app data folder
   const dataDir = path.join(app.getPath('userData'), 'data');
 
-  serverProcess = spawn('node', [serverPath], {
-    env: {
-      ...process.env,
-      DATA_DIR: dataDir,
-      PORT: PORT.toString()
-    },
-    stdio: 'inherit'
+  // Use Electron's bundled Node.js executable in packaged app
+  const nodeExecutable = isPackaged ? process.execPath : 'node';
+
+  const env = {
+    ...process.env,
+    DATA_DIR: dataDir,
+    PORT: PORT.toString(),
+  };
+
+  if (isPackaged) {
+    // Run Electron as Node.js runtime for the server
+    env.ELECTRON_RUN_AS_NODE = '1';
+  }
+
+  console.log('Starting server:', serverPath);
+  console.log('Data directory:', dataDir);
+
+  serverProcess = spawn(nodeExecutable, [serverPath], {
+    env,
+    stdio: 'inherit',
+    cwd
   });
 
   serverProcess.on('error', (err) => {

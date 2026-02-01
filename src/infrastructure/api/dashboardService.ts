@@ -27,6 +27,7 @@ export interface MonthlyTrend {
   expenses: number;
   net: number;
   projectedExpenses: number;
+  projectedIncome: number;
 }
 
 export interface BudgetProgress {
