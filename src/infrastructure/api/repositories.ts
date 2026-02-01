@@ -192,7 +192,7 @@ export const billRepo = {
   async create(data: {
     name: string;
     amount: number;
-    due_day: number;
+    date: number;
     frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
     type?: 'income' | 'expense';
     category_id?: string;
